@@ -1,0 +1,10 @@
+bot:
+  token: ""
+  prefix: ""
+db:
+  address: 127.0.0.1
+  port: 5432
+  username: ""
+  password: ""
+  database: postgres
+  max_connections: 200
