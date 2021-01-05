@@ -7,4 +7,3 @@ database:
   username: "postgres"
   password: "1234"
   database: "postgres"
-  schema: "modmail"

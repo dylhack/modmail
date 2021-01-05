@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using YamlDotNet.Serialization;
 
 namespace Modmail.Configuration
 {
@@ -16,7 +15,5 @@ namespace Modmail.Configuration
     public string password;
     [Required]
     public string database;
-    [Required]
-    public string schema;
   }
 }
