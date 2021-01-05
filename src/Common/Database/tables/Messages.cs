@@ -1,9 +1,10 @@
 using Npgsql;
 using System.Threading.Tasks;
+using Modmail.Models;
 
 namespace Modmail.Database.Tables
 {
-  public class Messages : Table
+  public class Messages : Table<Message>
   {
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.messages (
