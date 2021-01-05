@@ -26,7 +26,7 @@ namespace Modmail.Models
   {
     public string Content;
     public long MessageID;
-    public uint Version;
+    public int Version;
   }
 
   public struct Message
