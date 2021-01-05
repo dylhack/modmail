@@ -5,108 +5,73 @@ namespace Modmail.Models
 {
   public struct Attachment
   {
-    UInt64 id;
-    string name;
-    UInt64 sender;
-    string source;
-    bool isImage;
+    public UInt64 ID;
+    public UInt64 MessageID;
+    public string Name;
+    public UInt64 Sender;
+    public string Source;
+    public bool IsImage;
   }
 
   public struct Category
   {
-    string name;
-    string emojiID;
-    UInt64 guildID;
-    UInt64 id;
-    bool isActive;
-    UInt64 channelID;
-  }
-
-  public struct DBCategory
-  {
-    string channelID;
-    string emote;
-    UInt64 guildID;
-    UInt64 id;
-    string name;
-  }
-
-  public struct CreateCategoryOpt
-  {
-    string name;
-    string guildID;
-    string emote;
-    string channelID;
+    public string Name;
+    public string Emoji;
+    public UInt64 GuildID;
+    public UInt64 ID;
+    public bool IsActive;
+    public UInt64 ChannelID;
   }
 
   public struct Edit
   {
-    string content;
-    UInt64 message;
-    UInt32 version;
+    public string Content;
+    public UInt64 MessageID;
+    public UInt32 Version;
   }
 
   public struct Message
   {
-    string content;
-    UInt64 clientID;
-    List<Edit> edits;
-    List<Attachment> files;
-    bool isDeleted;
-    UInt64 modmailID;
-    UInt64 sender;
-    UInt64 threadID;
-    bool interna;
-  }
-
-  public struct DBMessage
-  {
-    string content;
-    UInt64 clientID;
-    bool isDeleted;
-    UInt64 modmailID;
-    UInt64 sender;
-    UInt64 threadID;
-    bool isInternal;
+    public string Content;
+    public UInt64 ClientID;
+    public List<Edit> Edits;
+    public List<Attachment> files;
+    public bool IsDeleted;
+    public UInt64 ModmailID;
+    public UInt64 Sender;
+    public UInt64 ThreadID;
+    public bool IsInternal;
   }
 
   public struct ModmailUser
   {
-    UInt64 id;
+    public UInt64 ID;
   }
 
   public struct Thread
   {
-    ModmailUser author;
-    UInt64 channel;
-    UInt64 id;
-    bool isActive;
-    List<Message> messages;
-    UInt16 category;
+    public ModmailUser Author;
+    public UInt64 Channel;
+    public UInt64 ID;
+    public bool IsActive;
+    public List<Message> Messages;
+    public UInt64 CategoryID;
   }
 
-
-  /**
-   * @type MuteStatus
-   * @property {UInt64} user
-   * @property {number} till Unix Epoch in seconds
-   * @property {CategoryID} category
-   * @property {string} reason
-   */
   public struct MuteStatus
   {
-    UInt64 user;
-    UInt64 till;
-    UInt64 category;
-    string reason;
+    public UInt64 UserID;
+    public UInt64 Till;
+    public UInt64 CategoryID;
+    public string Reason;
   }
 
 
   public struct StandardReply
   {
-    string reply;
-    string name;
-    string id;
+    public string Reply;
+    public string Name;
+    public string ID;
   }
 
   public enum RoleLevel
@@ -117,8 +82,8 @@ namespace Modmail.Models
 
   public struct Role
   {
-    UInt64 category;
-    UInt64 roleID;
-    RoleLevel level;
+    public UInt64 CategoryID;
+    public UInt64 RoleID;
+    public RoleLevel Level;
   }
 }
