@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using log4net;
 using Modmail.Configuration;
@@ -20,11 +19,6 @@ namespace Modmail
             ILog log = LogManager.GetLogger("Main");
             Config config = ConfigManager.GetConfig();
             DBManager db = await DBManager.GetDatabase(config.database);
-
-            if (config == null)
-            {
-                return;
-            }
         }
 
 

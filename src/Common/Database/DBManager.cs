@@ -16,16 +16,16 @@ namespace Modmail.Database
     const string INIT_ROLE_LEVEL =
     "CREATE TYPE modmail.role_level AS ENUM ('admin', 'mod');";
 
-    private string connStr;
-    private Attachments attachments { get; }
-    private Categories categories { get; }
-    private Edits edits { get; }
-    private Messages messages { get; }
-    private Mutes mutes { get; }
-    private Permissions permissions { get; }
-    private StandardReplies standardReplies { get; }
-    private Threads threads { get; }
-    private Users users { get; }
+    public string connStr;
+    public Attachments attachments;
+    public Categories categories;
+    public Edits edits;
+    public Messages messages;
+    public Mutes mutes;
+    public Permissions permissions;
+    public StandardReplies standardReplies;
+    public Threads threads;
+    public Users users;
 
     internal DBManager(ref string connStr)
     {
