@@ -5,8 +5,19 @@ using System.Threading.Tasks;
 
 namespace Modmail.Database.Tables
 {
-  public class Attachments : Table
+  public class Attachments : Table<Attachment>
   {
+    private static string COLUMNS =>
+    "id, message_id, name, source, sender, is_image";
+    private static string INSERTION =>
+    "@id, @message_id, @name, @source, @sender, @is_image";
+    private static sbyte OID => 0;
+    private static sbyte OMessageID => 1;
+    private static sbyte OName => 2;
+    private static sbyte OSource => 3;
+    private static sbyte OSender => 4;
+    private static sbyte OIsImage => 5;
+
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.attachments (
       id BIGINT NOT NULL
@@ -22,7 +33,7 @@ namespace Modmail.Database.Tables
       is_image BOOLEAN NOT NULL);";
 
     public Attachments(ref string connStr) : base("Attachments", connStr)
-    {}
+    { }
 
     /// <summary>
     /// <c>Store</c> stores a given attachment.
@@ -34,13 +45,8 @@ namespace Modmail.Database.Tables
     {
       NpgsqlConnection connection = await GetConnection();
       NpgsqlCommand cmd = new NpgsqlCommand(
-        @"INSERT INTO modmail.attachments (
-          id,
-          message_id,
-          name,
-          source,
-          sender,
-          is_image) VALUES (@id, @mid, @name, @source, @sender, @is_image);",
+        $"INSERT INTO modmail.attachments ({COLUMNS})"
+        + $" VALUES ({INSERTION});",
         connection);
 
       cmd.Parameters.AddWithValue("id", att.ID);
@@ -63,32 +69,15 @@ namespace Modmail.Database.Tables
     /// <returns>A list of attachments</returns>
     public async Task<List<Attachment>> GetByMessageID(long mID)
     {
-      List<Attachment> res = new List<Attachment>();
       NpgsqlConnection connection = await GetConnection();
       NpgsqlCommand cmd = new NpgsqlCommand(
-        @"SELECT id, message_id, name, source, sender, is_image
-        FROM modmail.attachments
-        WHERE message_id=@mid",
+        $"SELECT {COLUMNS} FROM modmail.attachments"
+        + " WHERE message_id=@mid",
         connection);
 
       cmd.Parameters.AddWithValue("mid", mID);
 
-      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
-
-      while (await reader.ReadAsync())
-      {
-        Attachment attachment;
-        attachment.ID = reader.GetInt64(0);
-        attachment.MessageID = reader.GetInt64(1);
-        attachment.Name = reader.GetString(2);
-        attachment.Source = reader.GetString(3);
-        attachment.Sender = reader.GetInt64(4);
-        attachment.IsImage = reader.GetBoolean(5);
-
-        res.Add(attachment);
-      }
-
-      return res;
+      return await ReadAll(cmd);
     }
 
     protected override async Task Prepare()
@@ -98,6 +87,33 @@ namespace Modmail.Database.Tables
       await new NpgsqlCommand(
         INIT,
         connection).ExecuteNonQueryAsync();
+    }
+
+    protected override Attachment Read(NpgsqlDataReader reader)
+    {
+      return new Attachment
+      {
+        ID = reader.GetInt64(OID),
+        MessageID = reader.GetInt64(OMessageID),
+        Name = reader.GetString(OName),
+        Source = reader.GetString(OSource),
+        Sender = reader.GetInt64(OSender),
+        IsImage = reader.GetBoolean(OIsImage),
+      };
+    }
+
+    protected override async Task<List<Attachment>> ReadAll(NpgsqlCommand cmd)
+    {
+      List<Attachment> res = new List<Attachment>();
+      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+      while (await reader.ReadAsync())
+      {
+        Attachment attachment = Read(reader);
+        res.Add(attachment);
+      }
+
+      return res;
     }
   }
 }
