@@ -101,19 +101,5 @@ namespace Modmail.Database.Tables
         IsImage = reader.GetBoolean(OIsImage),
       };
     }
-
-    protected override async Task<List<Attachment>> ReadAll(NpgsqlCommand cmd)
-    {
-      List<Attachment> res = new List<Attachment>();
-      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
-
-      while (await reader.ReadAsync())
-      {
-        Attachment attachment = Read(reader);
-        res.Add(attachment);
-      }
-
-      return res;
-    }
   }
 }

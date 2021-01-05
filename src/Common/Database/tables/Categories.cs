@@ -207,20 +207,6 @@ namespace Modmail.Database.Tables
       return null;
     }
 
-    protected override async Task<List<Category>> ReadAll(NpgsqlCommand cmd)
-    {
-      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
-      List<Category> res = new List<Category>();
-
-      while (await reader.ReadAsync())
-      {
-        Category cat = Read(reader);
-        res.Add(cat);
-      }
-
-      return res;
-    }
-
     protected override async Task<bool> Execute(NpgsqlCommand cmd)
     {
       int rows = await cmd.ExecuteNonQueryAsync();

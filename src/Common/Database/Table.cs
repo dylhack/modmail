@@ -28,14 +28,30 @@ namespace Modmail.Database
       throw new NotImplementedException();
     }
 
-    protected virtual Task<T?> ReadOne(NpgsqlCommand cmd)
+    protected virtual async Task<T?> ReadOne(NpgsqlCommand cmd)
     {
-      throw new NotImplementedException();
+      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
+
+      if (await reader.ReadAsync())
+      {
+        return Read(reader);
+      }
+
+      return null;
     }
 
-    protected virtual Task<List<T>> ReadAll(NpgsqlCommand cmd)
+    protected virtual async Task<List<T>> ReadAll(NpgsqlCommand cmd)
     {
-      throw new NotImplementedException();
+      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
+      List<T> res = new List<T>();
+
+      while (await reader.ReadAsync())
+      {
+        T cat = Read(reader);
+        res.Add(cat);
+      }
+
+      return res;
     }
 
     protected virtual Task<bool> Execute(NpgsqlCommand cmd)
