@@ -10,10 +10,10 @@
     <PackageReference Include="DSharpPlus" Version="3.2.3" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="Npgsql" Version="5.0.1.1" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.321">
+    <!-- <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.321">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    </PackageReference> -->
     <PackageReference Include="YamlDotNet" Version="9.1.0" />
   </ItemGroup>
 
