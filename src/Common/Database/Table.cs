@@ -1,11 +1,12 @@
 using log4net;
 using Npgsql;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Modmail.Database
 {
-  public class Table
+  public class Table<T> where T : struct
   {
     protected string connStr;
     protected string name;
@@ -20,6 +21,26 @@ namespace Modmail.Database
       ILog logger = GetLogger();
       logger.Info("Initializing");
       await Prepare();
+    }
+
+    protected virtual T Read(NpgsqlDataReader reader)
+    {
+      throw new NotImplementedException();
+    }
+
+    protected virtual Task<T?> ReadOne(NpgsqlCommand cmd)
+    {
+      throw new NotImplementedException();
+    }
+
+    protected virtual Task<List<T>> ReadAll(NpgsqlCommand cmd)
+    {
+      throw new NotImplementedException();
+    }
+
+    protected virtual Task<bool> Execute(NpgsqlCommand cmd)
+    {
+      throw new NotImplementedException();
     }
 
     protected async Task<NpgsqlConnection> GetConnection()
