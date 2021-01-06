@@ -49,8 +49,8 @@ namespace Modmail.Models
 
   public struct Thread
   {
-    public ModmailUser Author;
-    public long Channel;
+    public long AuthorID;
+    public long ChannelID;
     public long ID;
     public bool IsActive;
     public List<Message> Messages;
