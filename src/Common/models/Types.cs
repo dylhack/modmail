@@ -34,7 +34,7 @@ namespace Modmail.Models
     public string Content;
     public long ClientID;
     public List<Edit> Edits;
-    public List<Attachment> files;
+    public List<Attachment> Files;
     public bool IsDeleted;
     public long ModmailID;
     public long Sender;
