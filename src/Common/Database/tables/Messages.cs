@@ -83,6 +83,11 @@ namespace Modmail.Database.Tables
       return await ReadOne(cmd);
     }
 
+    /// <summary>
+    /// <c>GetByThreadID</c> Get all the messages of a thread
+    /// </summary>
+    /// <param name="threadID">The thread to fetch from</param>
+    /// <returns>A list of Messages</returns>
     public async Task<List<Message>> GetByThreadID(long threadID)
     {
       NpgsqlConnection connection = await GetConnection();
@@ -95,6 +100,13 @@ namespace Modmail.Database.Tables
       return await ReadAll(cmd);
     }
 
+    /// <summary>
+    /// <c>SetDeleted</c> Mark a message as deleted
+    /// </summary>
+    /// <param name="messageID">Message to mark</param>
+    /// <param name="isDeleted">Message's deletion state</param>
+    /// <returns>A boolean representing whether or not the message was updated
+    /// </returns>
     public async Task<bool> SetDeleted(long messageID, bool isDeleted)
     {
       NpgsqlConnection connection = await GetConnection();
@@ -109,6 +121,12 @@ namespace Modmail.Database.Tables
       return await Execute(cmd);
     }
 
+    /// <summary>
+    /// <c>Store</c> store a new message. All edits and files will be ignored.
+    /// </summary>
+    /// <param name="message">message being stored</param>
+    /// <returns>A boolean representing whether or not the message was stored
+    /// or not</returns>
     public async Task<bool> Store(Message message)
     {
       NpgsqlConnection connection = await GetConnection();
