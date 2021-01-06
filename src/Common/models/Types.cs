@@ -71,7 +71,7 @@ namespace Modmail.Models
   {
     public string Reply;
     public string Name;
-    public string ID;
+    public long ID;
   }
 
   public enum RoleLevel
