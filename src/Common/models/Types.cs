@@ -83,7 +83,7 @@ namespace Modmail.Models
   public struct Role
   {
     public long CategoryID;
-    public long RoleID;
+    public long ID;
     public RoleLevel Level;
   }
 }
