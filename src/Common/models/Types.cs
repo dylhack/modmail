@@ -63,6 +63,7 @@ namespace Modmail.Models
     public long Till;
     public long CategoryID;
     public string Reason;
+    public bool IsIgnored;
   }
 
 
