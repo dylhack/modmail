@@ -24,7 +24,7 @@ namespace Modmail.Database
     public Mutes mutes;
     public Permissions permissions;
     public StandardReplies standardReplies;
-    public Threads threads;
+    public UserThreads threads;
     public Users users;
 
     internal DBManager(ref string connStr)
@@ -37,7 +37,7 @@ namespace Modmail.Database
       this.mutes = new Mutes(ref connStr);
       this.permissions = new Permissions(ref connStr);
       this.standardReplies = new StandardReplies(ref connStr);
-      this.threads = new Threads(ref connStr);
+      this.threads = new UserThreads(ref connStr);
       this.users = new Users(ref connStr);
     }
 

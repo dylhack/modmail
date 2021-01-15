@@ -5,7 +5,7 @@ using Modmail.Models;
 
 namespace Modmail.Database.Tables
 {
-  public class Threads : Table<Thread>
+  public class UserThreads : Table<UserThread>
   {
     private static string COLUMNS =>
     "id, author_id, channel_id, is_active, category_id";
@@ -37,7 +37,7 @@ namespace Modmail.Database.Tables
     CREATE UNIQUE INDEX IF NOT EXISTS threads_id_uindex
       ON modmail.threads (id);";
 
-    public Threads(ref string connStr) : base("Threads", connStr)
+    public UserThreads(ref string connStr) : base("Threads", connStr)
     {}
 
     /// <summary>
@@ -46,7 +46,7 @@ namespace Modmail.Database.Tables
     /// <param name="thread"></param>
     /// <returns>A boolean representing whether or not it was successfully
     /// stored</returns>
-    public async Task<bool> Store(Thread thread)
+    public async Task<bool> Store(UserThread thread)
     {
       NpgsqlConnection connection = await GetConnection();
       NpgsqlCommand cmd = new NpgsqlCommand(
@@ -88,7 +88,7 @@ namespace Modmail.Database.Tables
     /// </summary>
     /// <param name="threadID"></param>
     /// <returns>A nullable Thread</returns>
-    public async Task<Thread?> GetByID(long threadID)
+    public async Task<UserThread?> GetByID(long threadID)
     {
       NpgsqlConnection connection = await GetConnection();
       NpgsqlCommand cmd = new NpgsqlCommand(
@@ -107,7 +107,7 @@ namespace Modmail.Database.Tables
     /// <param name="authorID"></param>
     /// <param name="isActive"></param>
     /// <returns>A nullable Thread</returns>
-    public async Task<Thread?> GetByAuthor(long authorID, bool isActive=true)
+    public async Task<UserThread?> GetByAuthor(long authorID, bool isActive=true)
     {
       NpgsqlConnection connection = await GetConnection();
       NpgsqlCommand cmd = new NpgsqlCommand(
@@ -127,7 +127,7 @@ namespace Modmail.Database.Tables
     /// </summary>
     /// <param name="channelID"></param>
     /// <returns>A nullable Thread</returns>
-    public async Task<Thread?> GetByChannelID(long channelID)
+    public async Task<UserThread?> GetByChannelID(long channelID)
     {
       NpgsqlConnection connection = await GetConnection();
       NpgsqlCommand cmd = new NpgsqlCommand(
@@ -140,9 +140,9 @@ namespace Modmail.Database.Tables
       return await ReadOne(cmd);
     }
 
-    protected override Thread Read(NpgsqlDataReader reader)
+    protected override UserThread Read(NpgsqlDataReader reader)
     {
-      return new Thread
+      return new UserThread
       {
         AuthorID = reader.GetInt64(OAuthorID),
         CategoryID = reader.GetInt64(OCategoryID),

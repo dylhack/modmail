@@ -47,7 +47,7 @@ namespace Modmail.Models
     public long ID;
   }
 
-  public struct Thread
+  public struct UserThread
   {
     public long AuthorID;
     public long ChannelID;
