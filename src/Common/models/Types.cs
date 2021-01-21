@@ -4,10 +4,10 @@ namespace Modmail.Models
 {
   public struct Attachment
   {
-    public long ID;
-    public long MessageID;
+    public ulong ID;
+    public ulong MessageID;
     public string Name;
-    public long Sender;
+    public ulong Sender;
     public string Source;
     public bool IsImage;
   }
@@ -16,52 +16,52 @@ namespace Modmail.Models
   {
     public string Name;
     public string Emoji;
-    public long GuildID;
-    public long ID;
+    public ulong GuildID;
+    public ulong ID;
     public bool IsActive;
-    public long ChannelID;
+    public ulong ChannelID;
   }
 
   public struct Edit
   {
     public string Content;
-    public long MessageID;
+    public ulong MessageID;
     public int Version;
   }
 
   public struct Message
   {
     public string Content;
-    public long ClientID;
+    public ulong ClientID;
     public List<Edit> Edits;
     public List<Attachment> Files;
     public bool IsDeleted;
-    public long ModmailID;
-    public long Sender;
-    public long ThreadID;
+    public ulong ModmailID;
+    public ulong SenderID;
+    public ulong ThreadID;
     public bool IsInternal;
   }
 
   public struct ModmailUser
   {
-    public long ID;
+    public ulong ID;
   }
 
-  public struct Thread
+  public struct UserThread
   {
-    public long AuthorID;
-    public long ChannelID;
-    public long ID;
+    public ulong AuthorID;
+    public ulong ChannelID;
+    public ulong ID;
     public bool IsActive;
     public List<Message> Messages;
-    public long CategoryID;
+    public ulong CategoryID;
   }
 
   public struct MuteStatus
   {
-    public long UserID;
-    public long Till;
-    public long CategoryID;
+    public ulong UserID;
+    public ulong Till;
+    public ulong CategoryID;
     public string Reason;
     public bool IsIgnored;
   }
@@ -71,7 +71,7 @@ namespace Modmail.Models
   {
     public string Reply;
     public string Name;
-    public long ID;
+    public ulong ID;
   }
 
   public enum RoleLevel
@@ -82,8 +82,8 @@ namespace Modmail.Models
 
   public struct Role
   {
-    public long CategoryID;
-    public long ID;
+    public ulong CategoryID;
+    public ulong ID;
     public RoleLevel Level;
   }
 }

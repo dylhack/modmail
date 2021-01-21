@@ -1,6 +1,7 @@
-using Npgsql;
+using MySql.Data.MySqlClient;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Data.Common;
 using Modmail.Models;
 using Modmail.Util;
 
@@ -19,13 +20,14 @@ namespace Modmail.Database.Tables
     private static sbyte OIsIgnored => 4;
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.mutes (
-      user_id BIGINT NOT NULL
-        CONSTRAINT threads_users_id_fk
-        REFERENCES modmail.users,
-      till BIGINT NOT NULL,
-      category_id BIGINT NOT NULL,
-      is_ignored BOOLEAN DEFAULT False NOT NULL,
-      reason TEXT NOT NULL);";
+    user_id BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (user_id)
+        REFERENCES modmail.users (id),
+    till BIGINT UNSIGNED NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    is_ignored BOOLEAN DEFAULT FALSE NOT NULL,
+    reason TEXT NOT NULL
+    );";
 
     public Mutes(ref string connStr) : base("Mutes", connStr)
     {}
@@ -40,8 +42,8 @@ namespace Modmail.Database.Tables
     public async Task<MuteStatus?> GetMuted(long userID, long categoryID)
     {
       long now = Time.GetNow();
-      NpgsqlConnection connection = new NpgsqlConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = new MySqlConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.mutes"
         + " WHERE till>@now"
         + " AND category_id=@categoryID"
@@ -64,8 +66,8 @@ namespace Modmail.Database.Tables
     /// <returns>A list of Mute Statuses</returns>
     public async Task<List<MuteStatus>> GetAllMuted(long userID, long categoryID=0)
     {
-      NpgsqlConnection connection = new NpgsqlConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = new MySqlConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.mutes"
         + " WHERE user_id=@userID"
         + (categoryID == 0 ? "" : " AND category_id=@categoryID"),
@@ -89,8 +91,8 @@ namespace Modmail.Database.Tables
     /// </returns>
     public async Task<bool> Store(MuteStatus mute)
     {
-      NpgsqlConnection connection = new NpgsqlConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = new MySqlConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.mutes ({COLUMNS}) VALUES ({INSERTION})",
         connection);
 
@@ -113,8 +115,8 @@ namespace Modmail.Database.Tables
     public async Task<bool> Remove(long userID, long categoryID)
     {
       long now = Time.GetNow();
-      NpgsqlConnection connection = new NpgsqlConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = new MySqlConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "UPDATE modmail.mutes SET is_ignored=True"
         + " WHERE till>@now"
         + " AND category_id=@categoryID"
@@ -129,22 +131,22 @@ namespace Modmail.Database.Tables
       return await Execute(cmd);
     }
 
-    protected override MuteStatus Read(NpgsqlDataReader reader)
+    protected override MuteStatus Read(DbDataReader reader)
     {
       return new MuteStatus
       {
-        CategoryID = reader.GetInt64(OCategoryID),
+        CategoryID = reader.GetFieldValue<ulong>(OCategoryID),
         Reason = reader.GetString(OReason),
-        Till = reader.GetInt64(OTill),
-        UserID = reader.GetInt64(OUserID),
+        Till = reader.GetFieldValue<ulong>(OTill),
+        UserID = reader.GetFieldValue<ulong>(OUserID),
         IsIgnored = reader.GetBoolean(OIsIgnored),
       };
     }
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(INIT, connection);
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(INIT, connection);
 
       await cmd.ExecuteNonQueryAsync();
     }

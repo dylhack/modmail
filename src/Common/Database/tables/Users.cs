@@ -1,4 +1,6 @@
-using Npgsql;
+using MySql.Data.MySqlClient;
+using System.Data.Common;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Modmail.Models;
 
@@ -11,12 +13,12 @@ namespace Modmail.Database.Tables
     static sbyte OID => 0;
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.users (
-      id BIGINT NOT NULL
-        CONSTRAINT users_pk PRIMARY KEY);";
+	    id BIGINT UNSIGNED NOT NULL,
+	       CONSTRAINT pk_user PRIMARY KEY (id));";
 
     const string INIT_ID_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS users_id_uindex
-      ON modmail.users (id);";
+    CREATE UNIQUE INDEX uindex_users
+      ON modmail.users(id);";
 
     public Users(ref string connStr) : base("Users", connStr)
     {}
@@ -29,14 +31,28 @@ namespace Modmail.Database.Tables
     /// successfully</returns>
     public async Task<bool> Store(ModmailUser user)
     {
-      NpgsqlConnection connection = new NpgsqlConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await this.GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.users ({COLUMNS}) VALUES ({INSERTION})",
         connection);
 
       cmd.Parameters.AddWithValue("id", user.ID);
 
       return await Execute(cmd);
+    }
+
+    /// <summary>
+    /// <c>GetAll</c> get all users in the database
+    /// </summary>
+    /// <returns>A list of Modmail Users</returns>
+    public async Task<List<ModmailUser>> GetAll()
+    {
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
+        $"SELECT * FROM modmail.users;",
+        connection);
+
+      return await ReadAll(cmd);
     }
 
     /// <summary>
@@ -47,8 +63,8 @@ namespace Modmail.Database.Tables
     /// </returns>
     public async Task<bool> Remove(long userID)
     {
-      NpgsqlConnection connection = new NpgsqlConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "DELETE FROM modmail.users WHERE id=@id",
         connection);
 
@@ -57,22 +73,22 @@ namespace Modmail.Database.Tables
       return await Execute(cmd);
     }
 
-    protected override ModmailUser Read(NpgsqlDataReader reader)
+    protected override ModmailUser Read(DbDataReader reader)
     {
       return new ModmailUser
       {
-        ID = reader.GetInt64(0),
+        ID = reader.GetFieldValue<ulong>(0),
       };
     }
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
+      MySqlConnection connection = await GetConnection();
 
-      await new NpgsqlCommand(INIT, connection)
+      await new MySqlCommand(INIT, connection)
         .ExecuteNonQueryAsync();
 
-      await new NpgsqlCommand(INIT_ID_UINDEX, connection)
+      await new MySqlCommand(INIT_ID_UINDEX, connection)
         .ExecuteNonQueryAsync();
     }
   }

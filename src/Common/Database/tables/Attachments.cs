@@ -1,6 +1,7 @@
 using Modmail.Models;
-using Npgsql;
+using MySql.Data.MySqlClient;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading.Tasks;
 
 namespace Modmail.Database.Tables
@@ -20,17 +21,18 @@ namespace Modmail.Database.Tables
 
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.attachments (
-      id BIGINT NOT NULL
-        CONSTRAINT attachments_pk PRIMARY KEY,
-      message_id BIGINT NOT NULL
-        CONSTRAINT attachments_messages_modmail_id_fk
-        REFERENCES modmail.messages (modmail_id),
-      name TEXT NOT NULL,
-      source TEXT NOT NULL,
-      sender BIGINT NOT NULL
-        CONSTRAINT attachments_users_id_fk
-        REFERENCES modmail.users,
-      is_image BOOLEAN NOT NULL);";
+    id BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT pk_attachments PRIMARY KEY (id),
+    message_id BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (message_id)
+        REFERENCES modmail.messages(modmail_id),
+    name TEXT NOT NULL,
+    source TEXT NOT NULL,
+    sender BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (sender)
+        REFERENCES modmail.users(id),
+    is_image BOOLEAN NOT NULL
+    );";
 
     public Attachments(ref string connStr) : base("Attachments", connStr)
     { }
@@ -43,8 +45,8 @@ namespace Modmail.Database.Tables
     /// the data was stored properly</returns>
     public async Task<bool> Store(Attachment att)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.attachments ({COLUMNS})"
         + $" VALUES ({INSERTION});",
         connection);
@@ -69,8 +71,8 @@ namespace Modmail.Database.Tables
     /// <returns>A list of attachments</returns>
     public async Task<List<Attachment>> GetByMessageID(long mID)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.attachments"
         + " WHERE message_id=@mid",
         connection);
@@ -82,22 +84,22 @@ namespace Modmail.Database.Tables
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
+      MySqlConnection connection = await GetConnection();
 
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT,
         connection).ExecuteNonQueryAsync();
     }
 
-    protected override Attachment Read(NpgsqlDataReader reader)
+    protected override Attachment Read(DbDataReader reader)
     {
       return new Attachment
       {
-        ID = reader.GetInt64(OID),
-        MessageID = reader.GetInt64(OMessageID),
+        ID = reader.GetFieldValue<ulong>(OID),
+        MessageID = reader.GetFieldValue<ulong>(OMessageID),
         Name = reader.GetString(OName),
         Source = reader.GetString(OSource),
-        Sender = reader.GetInt64(OSender),
+        Sender = reader.GetFieldValue<ulong>(OSender),
         IsImage = reader.GetBoolean(OIsImage),
       };
     }

@@ -1,6 +1,8 @@
-using Npgsql;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using MySql.Data.MySqlClient;
+using System.Data.Common;
+using log4net;
 using Modmail.Models;
 
 namespace Modmail.Database.Tables
@@ -8,9 +10,9 @@ namespace Modmail.Database.Tables
   public class Categories : Table<Category>
   {
     private static string COLUMNS =>
-    "id, channel_id, name, is_active, guild_id, emoji";
+    "id, name, is_active, guild_id, emoji";
     private static string INSERTION =>
-    "@id, @chanid, @name, True, @gid, @emoji";
+    "@id, @name, True, @gid, @emoji";
     private static sbyte OID => 0;
     private static sbyte OChannelID => 1;
     private static sbyte OName => 2;
@@ -20,33 +22,34 @@ namespace Modmail.Database.Tables
 
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.categories (
-      id BIGINT NOT NULL
-        CONSTRAINT categories_pk PRIMARY KEY,
-      channel_id BIGINT UNIQUE NOT NULL,
-      name TEXT NOT NULL,
-      is_active BOOLEAN DEFAULT true NOT NULL,
-      guild_id BIGINT NOT NULL,
-      emoji TEXT NOT NULL);";
+    id BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT pk_categories PRIMARY KEY (id),
+    channel_id BIGINT UNSIGNED UNIQUE NOT NULL,
+    name VARCHAR(32) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    guild_id BIGINT UNSIGNED NOT NULL,
+    emoji VARCHAR(2) NOT NULL
+    );";
 
     const string INIT_EMOTE_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS categories_emote_uindex
-      ON modmail.categories (emoji);";
+    CREATE UNIQUE INDEX uindex_categories_emoji
+      ON modmail.categories(emoji);";
 
     const string INIT_ID_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS categories_id_uindex
-      ON modmail.categories (id);";
+    CREATE UNIQUE INDEX uindex_categories_id
+      ON modmail.categories(id);";
 
     const string INIT_NAME_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS categories_name_uindex
-      ON modmail.categories (name);";
+    CREATE UNIQUE INDEX uindex_categories_name
+      ON modmail.categories(name);";
 
     public Categories(ref string connStr) : base("Categories", connStr)
     { }
 
     public async Task<Category?> GetByEmoji(string emoji)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.categories"
         + " WHERE is_active=True AND emoji=@emoji",
         connection);
@@ -57,8 +60,8 @@ namespace Modmail.Database.Tables
 
     public async Task<Category?> GetByID(long id)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.categories"
         + " WHERE is_active=True AND id=@id",
         connection);
@@ -73,8 +76,8 @@ namespace Modmail.Database.Tables
     /// <returns>A list of categories that are active</returns>
     public async Task<List<Category>> GetActive()
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.categories"
         + " WHERE is_active=True",
         connection);
@@ -85,8 +88,8 @@ namespace Modmail.Database.Tables
 
     public async Task<bool> SetActive(long id, bool isActive)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "UPDATE modmail.categories SET is_active=@active"
         + " WHERE id=@id",
         connection);
@@ -106,8 +109,8 @@ namespace Modmail.Database.Tables
     /// the category was updated</returns>
     public async Task<bool> SetEmoji(long id, string emoji)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "UPDATE modmail.categories SET emoji=@emoji"
         + " WHERE id=@id",
         connection);
@@ -127,8 +130,8 @@ namespace Modmail.Database.Tables
     /// the category was updated</returns>
     public async Task<bool> SetName(long id, string name)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "UPDATE modmail.categories SET name=@name"
         + " WHERE id=@id",
         connection);
@@ -147,8 +150,8 @@ namespace Modmail.Database.Tables
     /// </returns>
     public async Task<bool> Store(Category category)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.categories {COLUMNS}"
         + $" VALUES ({INSERTION})",
         connection);
@@ -164,53 +167,54 @@ namespace Modmail.Database.Tables
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
 
-      await new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+
+      await new MySqlCommand(
         INIT,
         connection).ExecuteNonQueryAsync();
 
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT_EMOTE_UINDEX,
         connection).ExecuteNonQueryAsync();
 
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT_ID_UINDEX,
         connection).ExecuteNonQueryAsync();
 
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT_NAME_UINDEX,
         connection).ExecuteNonQueryAsync();
-    }
-
-    protected override Category Read(NpgsqlDataReader reader)
-    {
-      return new Category
-      {
-        ID = reader.GetInt64(OID),
-        ChannelID = reader.GetInt64(OChannelID),
-        Emoji = reader.GetString(OEmoji),
-        GuildID = reader.GetInt64(OGuildID),
-        Name = reader.GetString(OName),
-        IsActive = reader.GetBoolean(OIsActive),
-      };
-    }
-
-    protected override async Task<Category?> ReadOne(NpgsqlCommand cmd)
-    {
-      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
-
-      if (await reader.ReadAsync())
-      {
-        return Read(reader);
-      }
-      return null;
-    }
-
-    protected override async Task<bool> Execute(NpgsqlCommand cmd)
-    {
-      int rows = await cmd.ExecuteNonQueryAsync();
-      return rows > 0;
-    }
   }
+
+  protected override Category Read(DbDataReader reader)
+  {
+    return new Category
+    {
+      ID = reader.GetFieldValue<ulong>(OID),
+      ChannelID = reader.GetFieldValue<ulong>(OChannelID),
+      Emoji = reader.GetString(OEmoji),
+      GuildID = reader.GetFieldValue<ulong>(OGuildID),
+      Name = reader.GetString(OName),
+      IsActive = reader.GetBoolean(OIsActive),
+    };
+  }
+
+  protected override async Task<Category?> ReadOne(MySqlCommand cmd)
+  {
+    DbDataReader reader = await cmd.ExecuteReaderAsync();
+
+    if (await reader.ReadAsync())
+    {
+      return Read(reader);
+    }
+    return null;
+  }
+
+  protected override async Task<bool> Execute(MySqlCommand cmd)
+  {
+    int rows = await cmd.ExecuteNonQueryAsync();
+    return rows > 0;
+  }
+}
 }
