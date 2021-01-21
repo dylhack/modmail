@@ -1,4 +1,5 @@
-using Npgsql;
+using MySql.Data.MySqlClient;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Modmail.Models;
 
@@ -15,10 +16,10 @@ namespace Modmail.Database.Tables
     private static sbyte OLevel => 2;
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.permissions (
-      category_id BIGINT NOT NULL
+      category_id BIGINT UNSIGNED NOT NULL
         REFERENCES modmail.categories,
-      id TEXT UNIQUE NOT NULL,
-      level modmail.role_level DEFAULT 'mod'::modmail.role_level NOT NULL);";
+      id BIGINT UNSIGNED UNIQUE NOT NULL,
+      level enum ('mod', 'admin') DEFAULT 'mod' NOT NULL);";
 
     public Permissions(ref string connStr) : base("Permissions", connStr)
     {}
@@ -32,8 +33,8 @@ namespace Modmail.Database.Tables
     public async Task<bool> Store(Role role)
     {
       string roleLevel = Resolve(role.Level);
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.permissions ({COLUMNS}) VALUES ({INSERTION})",
         connection);
 
@@ -52,8 +53,8 @@ namespace Modmail.Database.Tables
     /// </returns>
     public async Task<bool> Remove(long roleID)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "DELETE FROM modmail.permissions WHERE id=@id",
         connection);
 
@@ -70,8 +71,8 @@ namespace Modmail.Database.Tables
     /// <returns>A boolean representing that it updated properly</returns>
     public async Task<bool> SetLevel(long roleID, string roleLevel)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"UPDATE modmail.permissions SET role_level=@roleLevel"
         + " WHERE id=@id",
         connection);
@@ -118,20 +119,20 @@ namespace Modmail.Database.Tables
       }
     }
 
-    protected override Role Read(NpgsqlDataReader reader)
+    protected override Role Read(DbDataReader reader)
     {
       return new Role
       {
-        CategoryID = reader.GetInt64(OCategoryID),
+        CategoryID = reader.GetFieldValue<ulong>(OCategoryID),
         Level = Resolve(reader.GetString(OLevel)),
-        ID = reader.GetInt64(OID),
+        ID = reader.GetFieldValue<ulong>(OID),
       };
     }
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(INIT, connection);
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(INIT, connection);
 
       await cmd.ExecuteNonQueryAsync();
     }

@@ -1,6 +1,7 @@
-using Npgsql;
+using MySql.Data.MySqlClient;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Data.Common;
 using Modmail.Models;
 
 namespace Modmail.Database.Tables
@@ -8,9 +9,9 @@ namespace Modmail.Database.Tables
   public class Messages : Table<Message>
   {
     private static string COLUMNS =>
-    "sender, client_id, modmail_id, content, thread_id, is_deleted, is_internal";
+    "sender_id, client_id, modmail_id, content, thread_id, is_deleted, is_internal";
     private static string INSERTION =>
-    "@sender, @client_id, @modmail_id, @content, @thread_id, @is_deleted, @is_internal";
+    "@senderID, @client_id, @modmail_id, @content, @thread_id, @is_deleted, @is_internal";
     static sbyte OSender => 0;
     static sbyte OClientID => 1;
     static sbyte OModmailID => 2;
@@ -20,25 +21,26 @@ namespace Modmail.Database.Tables
     static sbyte OIsInternal => 6;
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.messages (
-      sender BIGINT NOT NULL
-        CONSTRAINT messages_users_id_fk
-        REFERENCES modmail.users,
-      client_id BIGINT,
-      modmail_id BIGINT NOT NULL,
-      content TEXT NOT NULL,
-      thread_id BIGINT NOT NULL
-        CONSTRAINT messages_threads_id_fk
-        REFERENCES modmail.threads,
-      is_deleted BOOLEAN DEFAULT false NOT NULL,
-      is_internal BOOLEAN DEFAULT false NOT NULL);";
+    sender_id BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (sender_id)
+        REFERENCES users (id),
+    client_id BIGINT UNSIGNED,
+    modmail_id BIGINT UNSIGNED NOT NULL,
+    content TEXT NOT NULL,
+    thread_id BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (thread_id)
+        REFERENCES threads (id),
+    is_deleted BOOLEAN DEFAULT FALSE NOT NULL,
+    is_internal BOOLEAN DEFAULT FALSE NOT NULL
+    );";
 
     const string INIT_CLID_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS messages_client_id_uindex
-      ON modmail.messages (client_id);";
+    CREATE UNIQUE INDEX uindex_messages_client_id
+      ON modmail.messages(client_id);";
 
     const string INIT_MMID_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS messages_modmail_id_uindex
-      ON modmail.messages (modmail_id);";
+    CREATE UNIQUE INDEX uindex_messages_modmail_id
+      ON modmail.messages(modmail_id);";
 
     public Messages(ref string connStr) : base("Messages", connStr)
     {}
@@ -51,17 +53,17 @@ namespace Modmail.Database.Tables
     /// <returns>A nullable Message</returns>
     public async Task<Message?> GetLastMessage(long threadID, long sender)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT ({COLUMNS}) modmail.messages"
         + " WHERE thread_id = @threadID"
-        + " AND sender = @sender"
+        + " AND sender_id = @senderID"
         + " AND is_deleted = False"
         + " AND is_internal = False",
         connection);
 
       cmd.Parameters.AddWithValue("threadID", threadID);
-      cmd.Parameters.AddWithValue("sender", sender);
+      cmd.Parameters.AddWithValue("senderID", sender);
 
       return await ReadOne(cmd);
     }
@@ -73,8 +75,8 @@ namespace Modmail.Database.Tables
     /// <returns>A nullable Message</returns>
     public async Task<Message?> GetByID(long messageID)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.messages WHERE message_id=@messageID",
         connection);
 
@@ -90,8 +92,8 @@ namespace Modmail.Database.Tables
     /// <returns>A list of Messages</returns>
     public async Task<List<Message>> GetByThreadID(long threadID)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.messages WHERE thread_id=@threadID",
         connection);
 
@@ -109,8 +111,8 @@ namespace Modmail.Database.Tables
     /// </returns>
     public async Task<bool> SetDeleted(long messageID, bool isDeleted)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "UPDATE modmail.messages SET is_deleted=@isDeleted"
         + " WHERE message_id=@messageID",
         connection);
@@ -129,12 +131,12 @@ namespace Modmail.Database.Tables
     /// or not</returns>
     public async Task<bool> Store(Message message)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.messages ({COLUMNS}) VALUES ({INSERTION})",
         connection);
 
-      cmd.Parameters.AddWithValue("sender", message.Sender);
+      cmd.Parameters.AddWithValue("sender_id", message.SenderID);
       cmd.Parameters.AddWithValue("client_id", message.ClientID);
       cmd.Parameters.AddWithValue("modmail_id", message.ModmailID);
       cmd.Parameters.AddWithValue("content", message.Content);
@@ -145,34 +147,34 @@ namespace Modmail.Database.Tables
       return await Execute(cmd);
     }
 
-    protected override Message Read(NpgsqlDataReader reader)
+    protected override Message Read(DbDataReader reader)
     {
       return new Message
       {
-        ClientID = reader.GetInt64(OClientID),
-        ModmailID = reader.GetInt64(OModmailID),
+        ClientID = reader.GetFieldValue<ulong>(OClientID),
+        ModmailID = reader.GetFieldValue<ulong>(OModmailID),
         Content = reader.GetString(OContent),
         Edits = new List<Edit>(),
         Files = new List<Attachment>(),
         IsDeleted = reader.GetBoolean(OIsDeleted),
         IsInternal = reader.GetBoolean(OIsInternal),
-        Sender = reader.GetInt64(OSender),
-        ThreadID = reader.GetInt64(OThreadID),
+        SenderID = reader.GetFieldValue<ulong>(OSender),
+        ThreadID = reader.GetFieldValue<ulong>(OThreadID),
       };
     }
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
+      MySqlConnection connection = await GetConnection();
 
-      await new NpgsqlCommand(INIT, connection)
+      await new MySqlCommand(INIT, connection)
         .ExecuteNonQueryAsync();
 
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT_CLID_UINDEX,
         connection).ExecuteNonQueryAsync();
 
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT_MMID_UINDEX,
         connection).ExecuteNonQueryAsync();
     }

@@ -10,7 +10,7 @@ namespace Modmail
     {
         public static void Main(string[] args)
         {
-            StartLogger();
+            Program.StartLogger();
             MainAsync().GetAwaiter().GetResult();
         }
 

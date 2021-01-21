@@ -1,4 +1,5 @@
-using Npgsql;
+using MySql.Data.MySqlClient;
+using System.Data.Common;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Modmail.Models;
@@ -18,23 +19,18 @@ namespace Modmail.Database.Tables
     private static sbyte OCategoryID => 4;
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.threads (
-      id BIGINT NOT NULL
-        CONSTRAINT threads_pk PRIMARY KEY,
-      author_id BIGINT NOT NULL
-        CONSTRAINT threads_users_id_fk
-        REFERENCES modmail.users,
-      channel_id BIGINT NOT NULL,
-      is_active BOOLEAN DEFAULT true NOT NULL,
-      category_id BIGINT NOT NULL
-        CONSTRAINT threads_categories_id_fk
-        REFERENCES modmail.categories);";
-
-    const string INIT_CHANNEL_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS threads_channel_uindex
-      ON modmail.threads (channel);";
+    id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+    author_id BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (author_id)
+        REFERENCES modmail.users (id),
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (category_id)
+        REFERENCES modmail.categories (id)
+    );";
 
     const string INIT_ID_UINDEX = @"
-    CREATE UNIQUE INDEX IF NOT EXISTS threads_id_uindex
+    CREATE UNIQUE INDEX uindex_threads_id
       ON modmail.threads (id);";
 
     public UserThreads(ref string connStr) : base("Threads", connStr)
@@ -48,8 +44,8 @@ namespace Modmail.Database.Tables
     /// stored</returns>
     public async Task<bool> Store(UserThread thread)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.threads ({COLUMNS}) VALUES ({INSERTION})",
         connection);
 
@@ -71,8 +67,8 @@ namespace Modmail.Database.Tables
     /// </returns>
     public async Task<bool> SetActive(long threadID, bool isActive)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         "UPDATE modmail.threads SET is_active=@isActive"
         + " WHERE id=@id",
         connection);
@@ -90,8 +86,8 @@ namespace Modmail.Database.Tables
     /// <returns>A nullable Thread</returns>
     public async Task<UserThread?> GetByID(long threadID)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.threads"
         + " WHERE id=@id",
         connection);
@@ -109,8 +105,8 @@ namespace Modmail.Database.Tables
     /// <returns>A nullable Thread</returns>
     public async Task<UserThread?> GetByAuthor(long authorID, bool isActive=true)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.threads"
         + " WHERE author_id=@authorID"
         + " AND is_active=@isActive",
@@ -129,8 +125,8 @@ namespace Modmail.Database.Tables
     /// <returns>A nullable Thread</returns>
     public async Task<UserThread?> GetByChannelID(long channelID)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.threads"
         + " WHERE channel_id=@channelID",
         connection);
@@ -140,14 +136,14 @@ namespace Modmail.Database.Tables
       return await ReadOne(cmd);
     }
 
-    protected override UserThread Read(NpgsqlDataReader reader)
+    protected override UserThread Read(DbDataReader reader)
     {
       return new UserThread
       {
-        AuthorID = reader.GetInt64(OAuthorID),
-        CategoryID = reader.GetInt64(OCategoryID),
-        ChannelID = reader.GetInt64(OChannelID),
-        ID = reader.GetInt64(OID),
+        AuthorID = reader.GetFieldValue<ulong>(OAuthorID),
+        CategoryID = reader.GetFieldValue<ulong>(OCategoryID),
+        ChannelID = reader.GetFieldValue<ulong>(OChannelID),
+        ID = reader.GetFieldValue<ulong>(OID),
         IsActive = reader.GetBoolean(OIsActive),
         Messages = new List<Message>(),
       };
@@ -155,16 +151,12 @@ namespace Modmail.Database.Tables
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
+      MySqlConnection connection = await GetConnection();
 
-      await new NpgsqlCommand(INIT, connection)
+      await new MySqlCommand(INIT, connection)
         .ExecuteNonQueryAsync();
 
-      await new NpgsqlCommand(
-        INIT_CHANNEL_UINDEX,
-        connection).ExecuteNonQueryAsync();
-
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT_ID_UINDEX,
         connection).ExecuteNonQueryAsync();
     }

@@ -1,4 +1,5 @@
-using Npgsql;
+using MySql.Data.MySqlClient;
+using System.Data.Common;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Modmail.Models;
@@ -16,11 +17,12 @@ namespace Modmail.Database.Tables
     private static sbyte OVersion => 2;
     const string INIT = @"
     CREATE TABLE IF NOT EXISTS modmail.edits (
-      content TEXT NOT NULL,
-      message_id BIGINT NOT NULL
-        CONSTRAINT edits_messages_modmail_id_fk
-        REFERENCES modmail.messages (modmail_id),
-      version INTEGER DEFAULT 1 NOT NULL)";
+    content TEXT NOT NULL,
+    message_id BIGINT UNSIGNED NOT NULL,
+    FOREIGN KEY (message_id)
+        REFERENCES messages (modmail_id),
+    version INTEGER DEFAULT 1 NOT NULL
+    );";
 
     public Edits(ref string connStr) : base("Edits", connStr)
     {}
@@ -33,8 +35,8 @@ namespace Modmail.Database.Tables
     /// <returns>A list of edits associated with the message</returns>
     public async Task<List<Edit>> GetByMessageID(long id)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"SELECT {COLUMNS} FROM modmail.edits"
         + " WHERE message_id=@id"
         + " ORDER BY version ASC",
@@ -53,8 +55,8 @@ namespace Modmail.Database.Tables
     /// edit was stored</returns>
     public async Task<bool> Store(Edit edit)
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(
         $"INSERT INTO modmail.edits ({COLUMNS}) VALUES ({INSERTION})",
         connection);
 
@@ -65,20 +67,20 @@ namespace Modmail.Database.Tables
       return await Execute(cmd);
     }
 
-    protected override Edit Read(NpgsqlDataReader reader)
+    protected override Edit Read(DbDataReader reader)
     {
       return new Edit
       {
         Content = reader.GetString(OContent),
-        MessageID = reader.GetInt64(OMessageID),
+        MessageID = reader.GetFieldValue<ulong>(OMessageID),
         Version = reader.GetInt32(OVersion),
       };
     }
 
     protected override async Task Prepare()
     {
-      NpgsqlConnection connection = await GetConnection();
-      NpgsqlCommand cmd = new NpgsqlCommand(INIT, connection);
+      MySqlConnection connection = await GetConnection();
+      MySqlCommand cmd = new MySqlCommand(INIT, connection);
 
       await cmd.ExecuteNonQueryAsync();
     }

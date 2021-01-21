@@ -1,6 +1,7 @@
 using log4net;
-using Npgsql;
+using MySql.Data.MySqlClient;
 using System;
+using System.Data.Common;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -20,17 +21,23 @@ namespace Modmail.Database
     {
       ILog logger = GetLogger();
       logger.Info("Initializing");
-      await Prepare();
+      try {
+        await Prepare();
+      } catch (MySqlException e) {
+        if (!e.Message.Contains("Duplicate key name")) {
+          logger.Error(e);
+        }
+      }
     }
 
-    protected virtual T Read(NpgsqlDataReader reader)
+    protected virtual T Read(DbDataReader reader)
     {
       throw new NotImplementedException();
     }
 
-    protected virtual async Task<T?> ReadOne(NpgsqlCommand cmd)
+    protected virtual async Task<T?> ReadOne(MySqlCommand cmd)
     {
-      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
+      DbDataReader reader = await cmd.ExecuteReaderAsync();
 
       if (await reader.ReadAsync())
       {
@@ -40,9 +47,9 @@ namespace Modmail.Database
       return null;
     }
 
-    protected virtual async Task<List<T>> ReadAll(NpgsqlCommand cmd)
+    protected virtual async Task<List<T>> ReadAll(MySqlCommand cmd)
     {
-      NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
+      DbDataReader reader = await cmd.ExecuteReaderAsync();
       List<T> res = new List<T>();
 
       while (await reader.ReadAsync())
@@ -54,14 +61,16 @@ namespace Modmail.Database
       return res;
     }
 
-    protected virtual Task<bool> Execute(NpgsqlCommand cmd)
+    protected virtual async Task<bool> Execute(MySqlCommand cmd)
     {
-      throw new NotImplementedException();
+      int rows = await cmd.ExecuteNonQueryAsync();
+
+      return rows > 0;
     }
 
-    protected async Task<NpgsqlConnection> GetConnection()
+    protected async Task<MySqlConnection> GetConnection()
     {
-      NpgsqlConnection connection = new NpgsqlConnection(connStr);
+      MySqlConnection connection = new MySqlConnection(connStr);
       await connection.OpenAsync();
       return connection;
     }

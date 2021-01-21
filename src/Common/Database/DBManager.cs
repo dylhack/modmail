@@ -1,7 +1,7 @@
-using Npgsql;
+using MySql.Data;
+using MySql.Data.MySqlClient;
 using Modmail.Configuration;
 using Modmail.Database.Tables;
-using System;
 using System.Threading.Tasks;
 
 namespace Modmail.Database
@@ -9,12 +9,6 @@ namespace Modmail.Database
   public class DBManager
   {
     const string INIT_SCHEMA = "CREATE SCHEMA IF NOT EXISTS modmail;";
-
-    const string INIT_FILE_TYPE =
-    "CREATE TYPE modmail.file_type AS ENUM ('image', 'file');";
-
-    const string INIT_ROLE_LEVEL =
-    "CREATE TYPE modmail.role_level AS ENUM ('admin', 'mod');";
 
     public string connStr;
     public Attachments attachments;
@@ -66,32 +60,17 @@ namespace Modmail.Database
 
     private async Task Init()
     {
-      NpgsqlConnection connection = new NpgsqlConnection(this.connStr);
+      MySqlConnection connection = new MySqlConnection(this.connStr);
       await connection.OpenAsync();
 
-      await new NpgsqlCommand(
+      await new MySqlCommand(
         INIT_SCHEMA,
         connection).ExecuteNonQueryAsync();
-
-      try
-      {
-        await new NpgsqlCommand(
-          INIT_FILE_TYPE,
-          connection).ExecuteNonQueryAsync();
-
-        await new NpgsqlCommand(
-          INIT_ROLE_LEVEL,
-          connection).ExecuteNonQueryAsync();
-      } catch (PostgresException)
-      {
-        return;
-      }
-
     }
 
     private static string GetConnString(ref DBConfig config)
     {
-      var builder = new NpgsqlConnectionStringBuilder();
+      var builder = new MySqlConnectionStringBuilder();
 
       builder.Add("Host", config.address);
       builder.Add("Port", config.port);
