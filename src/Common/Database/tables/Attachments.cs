@@ -58,9 +58,8 @@ namespace Modmail.Database.Tables
       cmd.Parameters.AddWithValue("sender", att.Sender);
       cmd.Parameters.AddWithValue("is_image", att.IsImage);
 
-      int rows = await cmd.ExecuteNonQueryAsync();
 
-      return rows > 0;
+      return await Execute(cmd);
     }
 
     /// <summary>
