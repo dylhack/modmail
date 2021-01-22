@@ -1,8 +1,7 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using MySql.Data.MySqlClient;
 using System.Data.Common;
-using log4net;
+using MySql.Data.MySqlClient;
 using Modmail.Models;
 
 namespace Modmail.Database.Tables
@@ -58,7 +57,7 @@ namespace Modmail.Database.Tables
       return await ReadOne(cmd);
     }
 
-    public async Task<Category?> GetByID(long id)
+    public async Task<Category?> GetByID(ulong id)
     {
       MySqlConnection connection = await GetConnection();
       MySqlCommand cmd = new MySqlCommand(
