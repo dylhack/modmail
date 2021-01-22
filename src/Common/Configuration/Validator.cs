@@ -6,6 +6,7 @@ using YamlDotNet.Serialization;
 
 namespace Modmail.Configuration
 {
+  #nullable disable
   internal class Validator : INodeDeserializer
   {
     private INodeDeserializer deserializer;

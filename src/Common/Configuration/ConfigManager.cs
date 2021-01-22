@@ -11,6 +11,7 @@ namespace Modmail.Configuration
 {
   public class ConfigManager
   {
+    #nullable disable
     const string LOCATION = "./config.yml";
     const string ENV_VAR = "MODMAIL_CONFIG";
 

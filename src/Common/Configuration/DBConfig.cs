@@ -5,6 +5,7 @@ namespace Modmail.Configuration
 {
   public class DBConfig
   {
+    #nullable disable
     [Required]
     public string address;
     [Required]

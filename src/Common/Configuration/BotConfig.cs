@@ -4,6 +4,7 @@ namespace Modmail.Configuration
 {
   public class BotConfig
   {
+    #nullable disable
     [Required]
     public string token;
     [Required]
